@@ -55,8 +55,24 @@ async function SignIn(req, res, next) {
         const isMatchPassword = bcrypt.compareSync(req.body.password, existUser.password);
         if (!isMatchPassword)
             throw createHttpError.Unauthorized("Incorrect password");
-        const token = jwt.sign({accId: existUser._id}, process.env.ACCESS_TOKEN_KEY, )
+        const token = jwt.sign({ accId: existUser._id }, process.env.ACCESS_TOKEN_KEY, {
+            algorithm: process.env.ALGORITHM,
+            expiresIn: process.env.EXP_IN,
+        });
 
+        const authorities = [];
+        for (let i = 0; i < existUser.roles.length; i++) {
+            authorities.push(`ROLE_${existUser.roles[i].name.toUpperCase()}`);
+        }
+        //return
+        res.status(200).json({
+            token: token,
+            userInfo: {
+                username: existUser.username,
+                email: existUser.email
+            },
+            authorities: authorities
+        })
     } catch (error) {
         next(error)
     }
